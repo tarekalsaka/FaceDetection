@@ -108,9 +108,10 @@ def drowElipse(image_path,faces,numberOfFaceInImage):
 # %%      
  
 image_path, ann= readTextFile(anontation_path)
-for index,x in enumerate(image_path[10:15]):
-    # print (image_path[index])
-    faces, numFace,fullPath= parseAnnotation(image_path[index],ann)
+choose_image_to_work_on=image_path[10:15]
+for index,x in enumerate(choose_image_to_work_on):
+    print (index)
+    faces, numFace,fullPath= parseAnnotation(choose_image_to_work_on[index],ann)
     drowElipse(fullPath,faces,numFace)
     # crop_faces, coord_crop_faces = crop_face(fullPath,faces,numFace)
 
