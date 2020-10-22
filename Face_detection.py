@@ -105,13 +105,50 @@ def drowElipse(image_path,faces,numberOfFaceInImage):
   plt.figure()
   plt.imshow(img)
       
-# %%      
- 
-image_path, ann= readTextFile(anontation_path)
-choose_image_to_work_on=image_path[10:15]
-for index,x in enumerate(choose_image_to_work_on):
-    print (index)
-    faces, numFace,fullPath= parseAnnotation(choose_image_to_work_on[index],ann)
-    drowElipse(fullPath,faces,numFace)
-    # crop_faces, coord_crop_faces = crop_face(fullPath,faces,numFace)
+# %%
 
+
+def extract_background(crop_faces, coord_crop_faces, fullPath, numFace):
+    image = cv2.imread(fullPath)
+    backgrounds = []
+    for i in range(numFace):
+        
+        l,t,r,b = coord_crop_faces[i]
+        (w_width, w_height) = (abs(b - t + 1), abs(r - l + 1)) # window size
+        A_face = (r - l + 1)*(b -t + 1)
+        #sliding window
+        stepSize = 100
+       
+        for x in range(0, image.shape[1] - w_width , stepSize):
+            for y in range(0, image.shape[0] - w_height, stepSize):
+               window = image[x:x + w_width, y:y + w_height, :]
+               wl, wt, wr, wb = x, y, x + w_width, y + w_height
+               
+               A_intersection = (min(r,wr) - max(l,wl) + 1)*(min(b,wb) - max(t,wt) + 1)
+               A_window = (wr - wl + 1)*(wb - wt +1)
+               IOU = A_intersection / (A_window+A_face-A_intersection)
+               if IOU < 0.2:
+                  backgrounds.append(window)
+                  break
+            break
+    return backgrounds
+
+
+# %%      
+
+image_path, ann= readTextFile(anontation_path)
+
+for index,x in enumerate(image_path[10]):
+    # print (image_path[index])
+    faces, numFace,fullPath= parseAnnotation(image_path[index],ann)
+    #drowElipse(fullPath,faces,numFace)
+    crop_faces, coord_crop_faces = crop_face(fullPath,faces,numFace)
+    backgrounds = extract_background(crop_faces, coord_crop_faces, fullPath, numFace)
+    
+# %%
+
+for i in range(len(backgrounds)):
+    plt.figure()
+    plt.imshow(backgrounds[i])
+    plt.figure()
+    plt.imshow(crop_faces[i])
