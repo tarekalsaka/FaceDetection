@@ -84,6 +84,12 @@ def check(value):
     if value < 0:
         value = 0
     return value
+
+def checkratio(image1,image2):
+    ratio=  image1.size/image2.size
+    
+    return ratio
+
 def crop_face(image_path,faces,numberOfFaceInImage):
     '''
     this function take 
@@ -199,19 +205,32 @@ def generate_random_box(crop_faces, fullPath, numFace):
 
     '''
     boxb=[]
+    allratio=[]
     temp_backround=[]
     image = cv2.imread(fullPath)
     # plt.figure()
     # plt.imshow(image)
 
     for index in range(numFace):
+        # print ("numofface ", numFace)
         # plt.figure()
         # plt.imshow(crop_faces[index])
-        ratio=  crop_faces[index].size/image.size
+        # ratio=  crop_faces[index].size/image.size
+        ratio=checkratio(crop_faces[index],image)
+        allratio.append(ratio)
         w_face= crop_faces[index].shape[1]
         h_face=crop_faces[index].shape[0]
-        x = np.random.randint(image.shape[1]-w_face)
-        y=np.random.randint(image.shape[0]-h_face)
+        # print("w_face ,h_face",w_face ,h_face)
+        # print(image.shape[1]-w_face)
+        # print(image.shape[0]-h_face)
+
+        if (image.shape[1]-w_face<=0) or (image.shape[0]-h_face<=0):
+            x = np.random.randint(image.shape[1]-w_face+1)
+            y=np.random.randint(image.shape[0]-h_face+1)
+        else:
+            x = np.random.randint(image.shape[1]-w_face)
+            y=np.random.randint(image.shape[0]-h_face)
+            
         window=image[y:y+h_face,x:x+w_face]
         wl, wt, wr, wb = x,y,x+w_face,y+h_face
         backbox_dim=[wl, wt, wr, wb]
@@ -225,8 +244,8 @@ def generate_random_box(crop_faces, fullPath, numFace):
         # plt.figure()
         # plt.imshow(window)
      
-    return boxb,temp_backround,ratio
-def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace):
+    return boxb,temp_backround,allratio
+def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace,imageIndex):
     '''
 
     Parameters
@@ -247,14 +266,17 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace):
 
     '''
     crop_backround_list=[]
+
     # leastoverlap=[]
     while len(crop_backround_list)!= numFace:
-        box,temp_back,retio= generate_random_box(crop_faces, fullPath, numFace)
-        if retio>0.4:
+        box,temp_back,ratio_list= generate_random_box(crop_faces, fullPath, numFace)
+        # print (ratio_list)
+        if any(j>0.19 for j in ratio_list)or numFace>6:
             # with the same size of the face
             print ("impossibel to get backround")
             global numimgexclude
-            numimgexclude+=1
+            numimgexclude+=len(ratio_list)
+            imgExcludelist.append(imageIndex)
             break
         for index, v in enumerate(box):
             for index1 , c in enumerate(coord_crop_faces):
@@ -276,47 +298,44 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace):
 
 
 #%%
+
+imgExcludelist=[]
+
+
 image_path, ann= readTextFile(anontation_path)
-choose_image_to_work_on=image_path[30:40]
+choose_image_to_work_on=image_path
 for index,path_list in enumerate(choose_image_to_work_on):
-    # print("image i work on ",index)
+    print("image I work on ",index)
     faces, numFace,fullPath= parseAnnotation(path_list,ann)
     crop_faces, coord_crop_faces = crop_face(fullPath,faces,numFace)
     allfaces.append(crop_faces)
     # print ("number of face in image ",len(crop_faces))
-    back= extract_backround(crop_faces,coord_crop_faces,fullPath,numFace)
+    back= extract_backround(crop_faces,coord_crop_faces,fullPath,numFace,index)
     if  back:
         allbackround.append(back[0])
+    
+
+
+
+print ("start saveing.... :")
+# for n , x in enumerate(allfaces):
+#     for b,img in enumerate(allfaces[n]):
+#         # print(n,x)
+#         filename = './faces/back{}{}.jpg'.format(n,b)
+#         # print(filename)
+#         plt.figure()
+#         plt.imshow(img)
+#         # cv2.imwrite(filename, img) 
         
-    
-    
-    
-    
-            
-# for n , x in enumerate(crop_faces):
-#     # filename = './faces/face{}{}.jpg'.format(index,n)
-#     # cv2.imwrite(filename, x) 
-#     plt.figure()
-#     plt.imshow(x)
-    
-    
-for n , x in enumerate(allfaces):
-    for b,img in enumerate(allfaces[n]):
-        # print(n,x)
-        filename = './faces/back{}{}.jpg'.format(n,b)
-        print(filename)
-        plt.figure()
-        plt.imshow(img)
-        # cv2.imwrite(filename, img) 
+# for n , x in enumerate(allbackround):
+#     for b,img in enumerate(allbackround[n]):
+#         # print(n,x)
+#         filename = './backround/back{}{}.jpg'.format(n,b)
+#         # print(filename)
+#         plt.figure()
+#         plt.imshow(img)
+#         # cv2.imwrite(filename, img) 
         
-for n , x in enumerate(allbackround):
-    for b,img in enumerate(allbackround[n]):
-        # print(n,x)
-        filename = './backround/back{}{}.jpg'.format(n,b)
-        print(filename)
-        plt.figure()
-        plt.imshow(img)
-        # cv2.imwrite(filename, img) 
 print("#of ex",numimgexclude)
         
         
