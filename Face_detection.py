@@ -20,17 +20,40 @@ all_image_path=[]
 fullPath=[]
 directory_to_save_image='./faces'
 boxa=[]
-boxb=[]
 anontation_path = "./FDDB/FDDB-folds/"
-back=[]
 iou=[]
-temp_backround=[]
-crop_backround_list=[]
+numimgexclude=0 
+allbackround=[]
+allfaces=[]
 
-
-
+def compare_tow_boxes(boxa,boxb, backround):
+    
+    b=0
+    m=0
+    print (len(boxb))
+    while b < len(boxa):
+        print ("b",b)
+        while m < len(boxa) :
+            iou1=bb_intersection_over_union(boxa[m],boxb[b])
+            print ("M",m, iou1)
+            m+=1
+            iou.append(iou1)
+        print (iou)
+        if all(i<0.2 for i in iou):
+            print ("hi")
+            crop_backround_list.append(backround[b])
+            b+=2
+            iou.clear()
+            m=0
+        else :
+            iou.clear()
+            b+=2
+            m=0
+        if len(crop_backround_list)==numFace:
+            print (len(crop_backround_list))
+            break
+    return crop_backround_list
 def readTextFile(path):
-
   list_of_files =sorted(os.listdir("./FDDB/FDDB-folds/"))
 
   for index, file in enumerate(list_of_files):
@@ -45,7 +68,6 @@ def readTextFile(path):
           all_image_path.append(xx.rstrip())
 
   return all_image_path,ann
-
 def parseAnnotation(image_path,annotationList):
   faces=[]
  
@@ -58,13 +80,10 @@ def parseAnnotation(image_path,annotationList):
      faces.append(annotationList[index].rstrip())
      index=index+1
   return  faces, numOfFace, image_Full_path
-
-
 def check(value):
     if value < 0:
         value = 0
     return value
-
 def crop_face(image_path,faces,numberOfFaceInImage):
     '''
     this function take 
@@ -96,7 +115,6 @@ def crop_face(image_path,faces,numberOfFaceInImage):
         coord_crop_faces.append(temp_coord_crop_face)
        
     return crop_faces, coord_crop_faces 
-
 def drowElipse(image_path,faces,numberOfFaceInImage):
     
   img= cv2.imread(image_path)  
@@ -114,10 +132,6 @@ def drowElipse(image_path,faces,numberOfFaceInImage):
       
   plt.figure()
   plt.imshow(img)
-      
-# %%
-
-
 def bb_intersection_over_union(boxA, boxB):
 	# determine the (x, y)-coordinates of the intersection rectangle
 	xA = max(boxA[0], boxB[0])
@@ -136,7 +150,6 @@ def bb_intersection_over_union(boxA, boxB):
 	iou = interArea / float(boxAArea + boxBArea - interArea)
 	# return the intersection over union value
 	return iou
-    
 def slide_box(shape,image,w,h,step):
     boxb.clear()
     back.clear()
@@ -157,14 +170,40 @@ def slide_box(shape,image,w,h,step):
            
 
     return boxb,back                
-                
 def generate_random_box(crop_faces, fullPath, numFace):
+    '''
+    
+
+    Parameters
+    ----------
+    crop_faces : list
+        contain the faces image.
+    fullPath : sting
+        path to the image in the datasest to read.
+    numFace : int
+        number of face in each image.    
+
+    Returns
+    -------
+    boxb : list 
+        contain [wl, wt, wr, wb] for random box
+        as much as #faces in image 
+    temp_backround : list
+         list of backround crop from image
+         as much as #faces in image.
+    ratio : float
+        ratio of the image size and face size
+        help to decide if the face as big as image
+        then even ignore the image or reduce the size of box to half
+        to be able to extract the backround not overlap this face.
+
+    '''
+    boxb=[]
+    temp_backround=[]
     image = cv2.imread(fullPath)
     # plt.figure()
     # plt.imshow(image)
-    
-   
-    
+
     for index in range(numFace):
         # plt.figure()
         # plt.imshow(crop_faces[index])
@@ -187,118 +226,100 @@ def generate_random_box(crop_faces, fullPath, numFace):
         # plt.imshow(window)
      
     return boxb,temp_backround,ratio
-
-def compare_tow_boxes(boxa,boxb, backround):
-    
-    b=0
-    m=0
-    print (len(boxb))
-    while b < len(boxa):
-        print ("b",b)
-        while m < len(boxa) :
-            iou1=bb_intersection_over_union(boxa[m],boxb[b])
-            print ("M",m, iou1)
-            m+=1
-            iou.append(iou1)
-        print (iou)
-        if all(i<0.2 for i in iou):
-            print ("hi")
-            crop_backround_list.append(backround[b])
-            b+=2
-            iou.clear()
-            m=0
-        else :
-            iou.clear()
-            b+=2
-            m=0
-        if len(crop_backround_list)==numFace:
-            print (len(crop_backround_list))
-            break
-    return crop_backround_list
-        
-
 def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace):
-    
+    '''
+
+    Parameters
+    ----------
+    crop_faces : list
+        contain the faces image.
+    coord_crop_faces : list 
+        contain the (l,t,r,b) of the face.
+    fullPath : string
+        path to the image in the dataset to read.
+    numFace : int
+        number of face in each image.
+
+    Returns
+    -------
+    list
+        list with the backround image IOU with the face <0.2.
+
+    '''
+    crop_backround_list=[]
+    # leastoverlap=[]
     while len(crop_backround_list)!= numFace:
-        box,temp,retio= generate_random_box(crop_faces, fullPath, numFace)
-        
-        
+        box,temp_back,retio= generate_random_box(crop_faces, fullPath, numFace)
         if retio>0.4:
-            # with the same size if the face
+            # with the same size of the face
             print ("impossibel to get backround")
+            global numimgexclude
+            numimgexclude+=1
             break
         for index, v in enumerate(box):
             for index1 , c in enumerate(coord_crop_faces):
                 iou1=bb_intersection_over_union(c,v)
+                # if iou1==0:
+                    # leastoverlap.append((index,index1))
                 iou.append(iou1)
         if all(i<0.2 for i in iou ):
-            print (iou)
-            crop_backround_list.append(temp)
+            # print (leastoverlap)
+            # print (iou)
+            crop_backround_list.append(temp_back)
         else:
-            print ("backround match with face not accept")
-            box.clear()
+            # print ("backround match with face not accept")
+            # leastoverlap.clear()
             iou.clear()
-            temp.clear()
+            # temp_back.clear()
             
-    return crop_backround_list[0]
-
+    return crop_backround_list
 
 
 #%%
 image_path, ann= readTextFile(anontation_path)
-choose_image_to_work_on=image_path[20:24]
+choose_image_to_work_on=image_path[30:40]
 for index,path_list in enumerate(choose_image_to_work_on):
-    faces, numFace,fullPath= parseAnnotation(choose_image_to_work_on[index],ann)
+    # print("image i work on ",index)
+    faces, numFace,fullPath= parseAnnotation(path_list,ann)
     crop_faces, coord_crop_faces = crop_face(fullPath,faces,numFace)
-    print (len(crop_faces))
-    # back= extract_backround(crop_faces,coord_crop_faces,fullPath,numFace)
+    allfaces.append(crop_faces)
+    # print ("number of face in image ",len(crop_faces))
+    back= extract_backround(crop_faces,coord_crop_faces,fullPath,numFace)
+    if  back:
+        allbackround.append(back[0])
+        
     
     
     
     
-    
-    
-    
-    
-    # for n , x in enumerate(crop_backround_list[0]):
-    # filename = './backround/back{}{}.jpg'.format(index,n)
-    # plt.figure()
-    # plt.imshow(x)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    # while len(crop_backround_list)!= numFace:
-    #     box,temp,retio= generate_random_box(crop_faces, coord_crop_faces, fullPath, numFace)
-    #     if retio>0.4:
-    #         # with the same size if the face
-    #         print ("impossibel to get backround")
-    #         break
-    #     for index, v in enumerate(box):
-    #         for index1 , c in enumerate(coord_crop_faces):
-    #             iou1=bb_intersection_over_union(c,v)
-    #             iou.append(iou1)
-                
-    #     if all(i<0.2 for i in iou ):
-    #         print (iou)
-    #         crop_backround_list.append(temp)
-    #     else:
-    #         print ("backround match with face not accept")
-    #         box.clear()
-    #         iou.clear()
-    #         temp.clear()
             
-                   
-
-    #     # cv2.imwrite(filename, x) 
-            
-            
-            
+# for n , x in enumerate(crop_faces):
+#     # filename = './faces/face{}{}.jpg'.format(index,n)
+#     # cv2.imwrite(filename, x) 
+#     plt.figure()
+#     plt.imshow(x)
+    
+    
+for n , x in enumerate(allfaces):
+    for b,img in enumerate(allfaces[n]):
+        # print(n,x)
+        filename = './faces/back{}{}.jpg'.format(n,b)
+        print(filename)
+        plt.figure()
+        plt.imshow(img)
+        # cv2.imwrite(filename, img) 
+        
+for n , x in enumerate(allbackround):
+    for b,img in enumerate(allbackround[n]):
+        # print(n,x)
+        filename = './backround/back{}{}.jpg'.format(n,b)
+        print(filename)
+        plt.figure()
+        plt.imshow(img)
+        # cv2.imwrite(filename, img) 
+print("#of ex",numimgexclude)
+        
+        
             
             
             
