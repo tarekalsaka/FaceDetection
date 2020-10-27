@@ -11,7 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os 
 import math
-from random import randint
 
 
 chdir="" 
@@ -24,6 +23,11 @@ anontation_path = "./FDDB/FDDB-folds/"
 iou=[]
 numimgexclude=0 
 allbackround=[]
+allbackround2=[]
+allbackround3=[]
+allbackround3=[]
+
+
 allfaces=[]
 
 def compare_tow_boxes(boxa,boxb, backround):
@@ -68,6 +72,8 @@ def readTextFile(path):
           all_image_path.append(xx.rstrip())
 
   return all_image_path,ann
+
+
 def parseAnnotation(image_path,annotationList):
   faces=[]
  
@@ -208,8 +214,7 @@ def generate_random_box(crop_faces, fullPath, numFace):
     allratio=[]
     temp_backround=[]
     image = cv2.imread(fullPath)
-    # plt.figure()
-    # plt.imshow(image)
+    
 
     for index in range(numFace):
         # print ("numofface ", numFace)
@@ -266,6 +271,7 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace,imageIndex
 
     '''
     crop_backround_list=[]
+  
 
     # leastoverlap=[]
     while len(crop_backround_list)!= numFace:
@@ -298,12 +304,10 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace,imageIndex
 
 
 #%%
-
+    
 imgExcludelist=[]
-
-
 image_path, ann= readTextFile(anontation_path)
-choose_image_to_work_on=image_path
+choose_image_to_work_on=image_path       
 for index,path_list in enumerate(choose_image_to_work_on):
     print("image I work on ",index)
     faces, numFace,fullPath= parseAnnotation(path_list,ann)
@@ -311,54 +315,43 @@ for index,path_list in enumerate(choose_image_to_work_on):
     allfaces.append(crop_faces)
     # print ("number of face in image ",len(crop_faces))
     back= extract_backround(crop_faces,coord_crop_faces,fullPath,numFace,index)
-    if  back:
+    if  len(back)==1:
         allbackround.append(back[0])
-    
-
-
+    elif len(back)==2:
+        allbackround.append(back[0])
+        allbackround.append(back[1])    
+    elif len(back)==3:
+        allbackround.append(back[0])
+        allbackround.append(back[1])
+        allbackround.append(back[2])
+    elif len(back)==4:
+        allbackround.append(back[0])
+        allbackround.append(back[1])
+        allbackround.append(back[2])
+        allbackround.append(back[3])
 
 print ("start saveing.... :")
-# for n , x in enumerate(allfaces):
-#     for b,img in enumerate(allfaces[n]):
-#         # print(n,x)
-#         filename = './faces/back{}{}.jpg'.format(n,b)
-#         # print(filename)
-#         plt.figure()
-#         plt.imshow(img)
-#         # cv2.imwrite(filename, img) 
+for n , x in enumerate(allfaces):
+    for b,img in enumerate(allfaces[n]):
+        # print(n,x)
+        filename = './faces/face{}{}.jpg'.format(n,b)
+        # print(filename)
+        # plt.figure()
+        # plt.imshow(img)
+        cv2.imwrite(filename, img) 
         
-# for n , x in enumerate(allbackround):
-#     for b,img in enumerate(allbackround[n]):
-#         # print(n,x)
-#         filename = './backround/back{}{}.jpg'.format(n,b)
-#         # print(filename)
-#         plt.figure()
-#         plt.imshow(img)
-#         # cv2.imwrite(filename, img) 
+for n , x in enumerate(allbackround):
+    for b,img in enumerate(allbackround[n]):
+        # print(n,x)
+        filename = './backround/back{}{}.jpg'.format(n,b)
+        # print(filename)
+        # plt.figure()
+        # plt.imshow(img)
+        cv2.imwrite(filename, img) 
+        
         
 print("#of ex",numimgexclude)
         
         
-            
-            
-            
-            
-            
-        
-                
-
-        
 
 
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
