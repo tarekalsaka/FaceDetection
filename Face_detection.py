@@ -30,33 +30,7 @@ allbackround3=[]
 
 allfaces=[]
 
-def compare_tow_boxes(boxa,boxb, backround):
-    
-    b=0
-    m=0
-    print (len(boxb))
-    while b < len(boxa):
-        print ("b",b)
-        while m < len(boxa) :
-            iou1=bb_intersection_over_union(boxa[m],boxb[b])
-            print ("M",m, iou1)
-            m+=1
-            iou.append(iou1)
-        print (iou)
-        if all(i<0.2 for i in iou):
-            print ("hi")
-            crop_backround_list.append(backround[b])
-            b+=2
-            iou.clear()
-            m=0
-        else :
-            iou.clear()
-            b+=2
-            m=0
-        if len(crop_backround_list)==numFace:
-            print (len(crop_backround_list))
-            break
-    return crop_backround_list
+
 def readTextFile(path):
   list_of_files =sorted(os.listdir("./FDDB/FDDB-folds/"))
 
@@ -162,26 +136,7 @@ def bb_intersection_over_union(boxA, boxB):
 	iou = interArea / float(boxAArea + boxBArea - interArea)
 	# return the intersection over union value
 	return iou
-def slide_box(shape,image,w,h,step):
-    boxb.clear()
-    back.clear()
-    # for x in range(0,image.shape[1] - w , step):
-    #         for y in range(0,image.shape[0] - h, step):
-    #             window = image[x:x + w, y:y + h, :]
-    #             wl, wt, wr, wb = x, y, x + w, y + h
-    #             box=[wl, wt, wr, wb]
-    #             if window.shape ==shape:
-    #                 boxb.append(box)
-    #                 back.append(window)
-    x, y = np.random.randint(image.shape[0]-w, size=2)
-    window= image[x:x+w, y:y+h] 
-    wl, wt, wr, wb = x, y, x + w, y + h
-    box=[wl, wt, wr, wb]
-    boxb.append(box)
-    back.append(window)
-           
-
-    return boxb,back                
+                
 def generate_random_box(crop_faces, fullPath, numFace):
     '''
     
