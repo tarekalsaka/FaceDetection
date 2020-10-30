@@ -13,22 +13,17 @@ import os
 import math
 
 
-chdir="" 
+chdir=""
 ann= []
 all_image_path=[]
 fullPath=[]
-directory_to_save_image='./faces'
 boxa=[]
 anontation_path = "./FDDB/FDDB-folds/"
 iou=[]
 numimgexclude=0 
 allbackround=[]
-allbackround2=[]
-allbackround3=[]
-allbackround3=[]
-
-
 allfaces=[]
+imgExcludelist=[]
 
 
 def readTextFile(path):
@@ -50,7 +45,7 @@ def readTextFile(path):
 
 def parseAnnotation(image_path,annotationList):
   faces=[]
- 
+  
   image_Full_path= "./FDDB/originalPics/"+ image_path.strip()+".jpg"
   if image_path in annotationList:
     index=annotationList.index(image_path)
@@ -60,6 +55,7 @@ def parseAnnotation(image_path,annotationList):
      faces.append(annotationList[index].rstrip())
      index=index+1
   return  faces, numOfFace, image_Full_path
+
 def check(value):
     if value < 0:
         value = 0
@@ -260,7 +256,6 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace,imageIndex
 
 #%%
     
-imgExcludelist=[]
 image_path, ann= readTextFile(anontation_path)
 choose_image_to_work_on=image_path       
 for index,path_list in enumerate(choose_image_to_work_on):
@@ -284,26 +279,37 @@ for index,path_list in enumerate(choose_image_to_work_on):
         allbackround.append(back[1])
         allbackround.append(back[2])
         allbackround.append(back[3])
-
+        
+finalbackround = []
+for n , x in enumerate(allbackround):
+    for b,img in enumerate(allbackround[n]):
+        if len(finalbackround)==4136:
+            break
+        else :
+            finalbackround.append(img)
+            
+            
 print ("start saveing.... :")
-for n , x in enumerate(allfaces):
+for n , x in enumerate(allfaces[:10]):
     for b,img in enumerate(allfaces[n]):
         # print(n,x)
         filename = './faces/face{}{}.jpg'.format(n,b)
         # print(filename)
-        # plt.figure()
-        # plt.imshow(img)
-        cv2.imwrite(filename, img) 
+        plt.figure()
+        plt.imshow(img)
+        # cv2.imwrite(filename, img) 
         
-for n , x in enumerate(allbackround):
-    for b,img in enumerate(allbackround[n]):
-        # print(n,x)
-        filename = './backround/back{}{}.jpg'.format(n,b)
-        # print(filename)
-        # plt.figure()
-        # plt.imshow(img)
-        cv2.imwrite(filename, img) 
-        
+            
+for index, img in enumerate(finalbackround[:10]):
+    
+    filename = './backround/back{}.jpg'.format(index)
+    print(filename)
+    plt.figure()
+    plt.imshow(img)
+    # cv2.imwrite(filename, img) 
+    
+    
+       
         
 print("#of ex",numimgexclude)
         
