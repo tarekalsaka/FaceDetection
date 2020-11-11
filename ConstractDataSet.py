@@ -165,6 +165,8 @@ def generate_random_box(crop_faces, fullPath, numFace):
     allratio=[]
     temp_backround=[]
     image = cv2.imread(fullPath)
+    # plt.figure()
+    # plt.imshow(image)
     
 
     for index in range(numFace):
@@ -227,8 +229,8 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace,imageIndex
     # leastoverlap=[]
     while len(crop_backround_list)!= numFace:
         box,temp_back,ratio_list= generate_random_box(crop_faces, fullPath, numFace)
-        # print (ratio_list)
-        if any(j>0.19 for j in ratio_list)or numFace>6:
+        print (ratio_list)
+        if any(j>0.33 for j in ratio_list)or numFace>6:
             # with the same size of the face
             print ("impossibel to get backround")
             global numimgexclude
@@ -257,11 +259,14 @@ def extract_backround(crop_faces, coord_crop_faces, fullPath, numFace,imageIndex
 #%%
     
 image_path, ann= readTextFile(anontation_path)
-choose_image_to_work_on=image_path       
+choose_image_to_work_on=image_path[23:24]      
 for index,path_list in enumerate(choose_image_to_work_on):
     print("image I work on ",index)
     faces, numFace,fullPath= parseAnnotation(path_list,ann)
     crop_faces, coord_crop_faces = crop_face(fullPath,faces,numFace)
+    image = cv2.imread(fullPath)
+    plt.figure()
+    plt.imshow(image)
     allfaces.append(crop_faces)
     # print ("number of face in image ",len(crop_faces))
     back= extract_backround(crop_faces,coord_crop_faces,fullPath,numFace,index)
